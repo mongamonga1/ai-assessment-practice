@@ -4,7 +4,7 @@ export function shuffle(items) {
   for(let i=result.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[result[i],result[j]]=[result[j],result[i]];}
   return result;
 }
-function question(topic,scenario,prompt,correct,wrong,explanation,hint,ox=false){
+export function question(topic,scenario,prompt,correct,wrong,explanation,hint,ox=false){
   const options=ox?[correct,...wrong].sort((a,b)=>a==='O'?-1:b==='O'?1:0):shuffle([correct,...wrong]);
   return {topic,scenario,prompt,options,answer:options.indexOf(correct),explanation,hint};
 }
