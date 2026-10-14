@@ -1,4 +1,4 @@
-import {pick,shuffle,question,generateKnowledge,generateUsage} from './questions.js';
+import {pick,shuffle,question,generateKnowledge,generateUsage} from './questions.js?v=20261014-assist2';
 const money=n=>n.toLocaleString('ko-KR');
 const q=(topic,prompt,correct,wrong,explanation,hint='자료의 조건과 보기의 주장을 하나씩 대조하세요.')=>question(topic,'',prompt,correct,wrong,explanation,hint);
 const table=(name,headers,rows,note='')=>({name,type:'table',headers,rows,note});

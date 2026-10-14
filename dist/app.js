@@ -1,7 +1,7 @@
-import {grade} from './questions.js';
-import {practiceMenus,generators} from './scenarios.js';
-import {escape,documentHtml} from './documents.js';
-import {createPractice,timeLeft,cooldownLeft,selectAnswer,finishPractice,submitHint,restorePractice} from './practice.js';
+import {grade} from './questions.js?v=20261014-assist2';
+import {practiceMenus,generators} from './scenarios.js?v=20261014-assist2';
+import {escape,documentHtml} from './documents.js?v=20261014-assist2';
+import {createPractice,timeLeft,cooldownLeft,selectAnswer,finishPractice,submitHint,restorePractice} from './practice.js?v=20261014-assist2';
 const $=selector=>document.querySelector(selector), app=$('#app'),storageKey='ai-practice-session-v1';
 let s=null,view='menu',dialogAction=null,saveOK=true;
 try{s=restorePractice(sessionStorage.getItem(storageKey));}catch{saveOK=false;}
