@@ -1,6 +1,6 @@
 export function createPractice(exam,{rehearsal=false,minutes=20,now=Date.now()}={}){
  const data=rehearsal?{...exam,questions:exam.questions.slice(0,2)}:exam;
- return {version:1,exam:data,index:0,answers:data.questions.map(()=>null),flags:data.questions.map(()=>false),notes:data.questions.map(()=>''),graded:false,rehearsal,deadline:rehearsal||minutes===0?null:now+minutes*60000,hints:10,messages:[],fileIndex:0,attachments:[],selectedQuestion:null,draft:'',cooldown:0,assistantOpen:false,completedReason:null};
+ return {version:1,exam:data,index:0,answers:data.questions.map(()=>null),flags:data.questions.map(()=>false),notes:data.questions.map(()=>''),graded:false,rehearsal,deadline:rehearsal||minutes===0?null:now+minutes*60000,hints:10,messages:[],fileIndex:0,attachments:[],selectedQuestion:null,draft:'',cooldown:0,assistantOpen:data.documents.length>0,assistantMobileOpen:false,assistantVisibilityVersion:2,completedReason:null};
 }
 export function timeLeft(s,now=Date.now()){return s.deadline===null?null:Math.max(0,Math.ceil((s.deadline-now)/1000));}
 export function cooldownLeft(s,now=Date.now()){return Math.max(0,Math.ceil((s.cooldown-now)/1000));}
@@ -20,6 +20,8 @@ export function restorePractice(raw){
  if(!Number.isInteger(s.index)||s.index<0||s.index>=n||!s.exam.questions.every(q=>Array.isArray(q.options)&&Number.isInteger(q.answer)&&q.answer>=0&&q.answer<q.options.length))return null;
  if(!s.answers.every((v,i)=>v===null||Number.isInteger(v)&&v>=0&&v<s.exam.questions[i].options.length)||!s.notes.every(x=>typeof x==='string'&&x.length<=2000)||!s.flags.every(x=>typeof x==='boolean'))return null;
  if(typeof s.graded!=='boolean'||typeof s.rehearsal!=='boolean'||(s.deadline!==null&&!Number.isFinite(s.deadline))||!Number.isInteger(s.hints)||s.hints<0||s.hints>10||!Array.isArray(s.exam.documents)||!Array.isArray(s.messages)||!Array.isArray(s.attachments)||!Number.isFinite(s.cooldown)||typeof s.draft!=='string')return null;
+ if(s.assistantVisibilityVersion!==2){s.assistantOpen=s.exam.documents.length>0;s.assistantMobileOpen=false;s.assistantVisibilityVersion=2;}
+ if(typeof s.assistantOpen!=='boolean'||typeof s.assistantMobileOpen!=='boolean')return null;
  if(s.selectedQuestion!==null&&(!Number.isInteger(s.selectedQuestion)||s.selectedQuestion<0||s.selectedQuestion>=n))return null;
  if(!Number.isInteger(s.fileIndex)||s.fileIndex<0||s.fileIndex>=Math.max(1,s.exam.documents.length)||s.draft.length>1000||s.messages.length>10||!s.messages.every(m=>m&&typeof m.input==='string'&&m.input.length<=1000&&typeof m.reply==='string'&&Array.isArray(m.files)&&m.files.every(f=>typeof f==='string')))return null;
  if(s.attachments.some(i=>!Number.isInteger(i)||i<0||i>=s.exam.documents.length))return null;
