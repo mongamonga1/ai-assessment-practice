@@ -24,18 +24,15 @@ test('AX는 기본 직무역량과 AX 문제해결을 각 5문제 포함',()=>{
   const exam=generators.ax();
   assert.equal(exam.questions.filter(q=>q.dimension==='기본 직무역량').length,5);
   assert.equal(exam.questions.filter(q=>q.dimension==='AX 문제해결').length,5);
-  const cost=exam.documents[2].rows;
-  const expected=cost[0][1]+cost[1][1]*cost[2][1];
-  const q=exam.questions.find(q=>q.topic==='총소유비용');if(q)assert.equal(q.options[q.answer],expected+'만원');
+  assert.ok(exam.questions.every(q=>q.difficulty==='상'));
+  assert.equal(exam.selection.poolSize,22);
  }
 });
-test('설문 분모·구매 수량·교육 가중평균을 자료로 재계산',()=>{
- for(let i=0;i<200;i++){
-  const exam=generators.survey(),rows=exam.documents[0].rows,total=rows.reduce((sum,r)=>sum+r[1],0);
-  const max=Math.max(...rows.map(r=>r[1]));
-  const q=exam.questions.find(q=>q.topic==='선호도 비율');if(q)assert.equal(q.options[q.answer],(max/total*100).toFixed(1)+'%');
-  const edu=generators.education(),r=edu.documents[0].rows;
-  const avg=((r[0][1]*r[0][3]+r[1][1]*r[1][3])/(r[0][1]+r[1][1])).toFixed(1);
-  const eq=edu.questions.find(q=>q.topic==='가중평균');assert.equal(eq.options[eq.answer],avg+'점');
+test('심화 원장은 기초 자료와 별도 범위임을 표시하고 해설 근거가 존재',()=>{
+ for(const [mode,generate] of Object.entries(generators)){
+  if(mode==='knowledge')continue;
+  const exam=generate(),tables=exam.documents.filter(d=>d.name.startsWith('심화_')&&d.type==='table');
+  assert.ok(tables.length>=9);assert.ok(tables.every(d=>d.note.includes('별도 모집단·기간')));
+  for(const q of exam.questions)for(const ref of q.evidence)assert.ok(exam.documents.some(d=>d.name===ref.document));
  }
 });

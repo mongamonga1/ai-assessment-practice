@@ -1,9 +1,10 @@
-import {pick,shuffle,question,generateKnowledge,generateUsage} from './questions.js?v=20261014-assist2';
+import {finalizeExam} from './assessment-engine.js?v=20261015-llm3';
+import {pick,shuffle,question,generateKnowledge,generateUsage} from './questions.js?v=20261015-llm3';
 const money=n=>n.toLocaleString('ko-KR');
 const q=(topic,prompt,correct,wrong,explanation,hint='자료의 조건과 보기의 주장을 하나씩 대조하세요.')=>question(topic,'',prompt,correct,wrong,explanation,hint);
 const table=(name,headers,rows,note='')=>({name,type:'table',headers,rows,note});
 const memo=(name,paragraphs)=>({name,type:'memo',paragraphs});
-const scenario=(mode,title,intro,documents,pool,count=4)=>({mode,title,intro,documents,questions:shuffle(pool).slice(0,count)});
+const scenario=(mode,title,intro,documents,pool,count=4)=>finalizeExam({mode,title,intro,documents},pool,count);
 export const practiceMenus=[
  ['survey','간식 선호도 설문조사 분석','유효 응답 · 비율 · 표본 편향 · 구매안',4],
  ['usage','구독 비용 최적화','지원 기능 · 라이선스 · 크레딧 · 절감액',4],
@@ -58,7 +59,7 @@ export function generateEducation(){
 export function generateUsageExpanded(){
  const e=generateUsage(),t=e.documents[1],r=e.documents[3];
  const extra=[q('회수 정책',`명부 기준으로 ${t.team}의 비재직자 라이선스 수는?`,`${r.inactive}개`,[`${r.inactive+1}개`,`${r.inactive+2}개`,`${r.inactive+3}개`],`계약 ${r.seats}명 − 재직 ${r.active}명 = ${r.inactive}개.`),q('현재 비용',`${t.team}의 현재 월 구독료는?`,`USD ${t.cost}`,[`USD ${t.cost+50}`,`USD ${t.cost-50}`,`USD ${t.seats*20}`],`A2 ${t.seats}개 × USD 50 = USD ${t.cost}.`),q('크레딧 여유',`S1 ${r.active}개로 변경하면 실제 사용량 대비 여유 크레딧은?`,`${money(r.active*10000-t.usage)} 크레딧`,[`${money(r.active*10000)} 크레딧`,`${money(t.usage)} 크레딧`,`${money(r.active*10000-t.usage+10000)} 크레딧`],`제공량 ${money(r.active*10000)} − 사용량 ${money(t.usage)} 크레딧입니다.`),q('최적화 검증','AI가 “사용 크레딧만 충족하면 재직자 라이선스를 더 줄여도 된다”고 제안했습니다. 올바른 판단은?','재직자 1인 1라이선스 조건도 충족해야 하므로 크레딧만으로 수량을 줄일 수 없다.',['최저 가격이면 인원 정책은 무시한다.','라이선스를 줄이면 필수 기능도 항상 유지된다.','자료를 확인하지 않고 AI의 계산을 승인한다.'],'비용 최소화 전에 인원·기능·크레딧 필수 조건을 모두 확인합니다.')];
- e.questions=shuffle([...e.questions,...extra]).slice(0,4);return e;
+ return finalizeExam(e,[...e.questions,...extra],4);
 }
 export function generateAX(){
  const sector=pick(['지역 제조기업','중견 물류기업','다점포 유통기업','지역 서비스기업']),client=pick(['한결','푸른','이음','새봄']);
@@ -90,12 +91,12 @@ export function generateAX(){
  q('AX 실행 우선순위','초기 파일럿 범위의 적절한 선정은?','빈도 높은 반복 유형부터 검증하고 오류·피드백에 따라 단계적으로 확대한다.',['처음부터 모든 예외 업무를 자동 실행한다.','자료가 없는 업무를 우선 완전 자동화한다.','검수 결과와 무관하게 즉시 전체 배포한다.'],`06 문서에서는 ${capacity}개 중 반복 유형 ${repeat}개를 우선 검증합니다.`),
  q('AX 결과 보고','영업·고객에게 보낼 검토 결과에 포함할 내용은?','검증된 사실과 가정, 필수 요건 충족 여부, 비용·편익 한계, 다음 검수·의사결정 단계',['AI의 추천 문장만','보안 미검수 사실을 제외한 긍정 결과만','출처 없이 경쟁사보다 우수하다고 단정'],'추적 가능한 근거와 한계를 공유해야 고객과 내부 조직이 판단할 수 있습니다.')
  ];
- const questions=[...shuffle(foundation).slice(0,5).map(x=>({...x,dimension:'기본 직무역량'})),...shuffle(applied).slice(0,5).map(x=>({...x,dimension:'AX 문제해결'}))];
- return {mode:'ax',title:'AX 직무역량평가 · B2B 컨설팅 & 영업',intro:`당신은 ${client} ${sector}의 AX 도입을 제안하는 B2B 컨설팅·영업 담당자입니다. 고객 미팅·RFP·비용·파일럿 자료를 함께 검토하세요. 기본 직무역량 5문제와 AX 문제해결 5문제로 구성됩니다.`,documents:docs,questions};
+ const questions=[...foundation.map(x=>({...x,dimension:'기본 직무역량'})),...applied.map(x=>({...x,dimension:'AX 문제해결'}))];
+ return finalizeExam({mode:'ax',title:'AX 직무역량평가 · B2B 컨설팅 & 영업',intro:`당신은 ${client} ${sector}의 AX 도입을 제안하는 B2B 컨설팅·영업 담당자입니다. 고객 미팅·RFP·비용·파일럿 자료를 함께 검토하세요. 기본 직무역량 5문제와 AX 문제해결 5문제로 구성됩니다.`,documents:docs},questions,10);
 }
 export function generateKnowledgeExpanded(){
  const base=generateKnowledge(),n=pick([40,60,80]),minutes=pick([5,10,15]);
  const extra=[q('업무 자동화 판단','월 반복 보고서 작성에서 AI 활용이 적합한 1차 범위는?','자료 형식이 일정한 초안 작성부터 시작하고 수치·근거는 사람이 검증한다.',['모든 의사결정을 검수 없이 위임한다.','오류 기록 없이 바로 전면 도입한다.','민감 원문을 모든 외부 도구에 공개한다.'],'반복 업무에서 시작하되 검증과 보안 조건을 유지합니다.'),q('처리 시간 계산',`동일한 반복 업무 ${n}건을 건당 ${minutes}분씩 줄이면 총 절감 시간은?`,`${n*minutes/60}시간`,[`${n*minutes}시간`,`${n*minutes/120}시간`,`${n*minutes/60+1}시간`],`분을 시간으로 바꾸기 위해 ${n} × ${minutes} ÷ 60을 계산합니다.`),q('최신 자료 선택','내부 정책이 변경되었을 때 AI가 과거 자료로 답하는 문제를 줄이는 방법은?','발효일과 승인 버전을 확인한 자료를 제공하고 출처를 대조한다.',['모델의 문장이 자연스러우면 최신으로 간주한다.','인터넷 검색 결과 첫 번째가 항상 내부 정책보다 우선이다.','답변 길이를 늘리면 정책 검증이 끝난다.'],'자료의 최신성·권위·적용 범위를 확인합니다.'),q('AI 평가 기준','업무용 챗봇을 도입하기 전에 정할 평가 기준은?','정확성·근거 일치·처리시간·보안·사용성 등 업무 목적에 맞는 지표',['답변 글자 수만','모델 이름만','긍정적인 사용자 반응만'],'기술 성능과 업무 성과 및 제약을 함께 평가해야 합니다.'),q('정보 누락 처리','AI가 자료에 없는 계약 조건을 작성했습니다. 적절한 조치는?','미확인 항목으로 표시하고 담당자에게 확인한 후 반영한다.',['자연스러운 조건이면 그대로 사용한다.','비슷한 고객의 계약을 복사하면 항상 맞다.','확신도를 100%로 바꾸면 검증된다.'],'자료에 없는 정보는 생성 결과만으로 사실이 되지 않습니다.'),q('구조화 출력','여러 제안서를 같은 기준으로 비교하려면 어떤 출력 요청이 적절한가요?','필수 요건·비용·근거·미확인 항목을 동일한 열의 표로 작성한다.',['각 제안서마다 다른 기준으로 자유롭게 평가한다.','최종 추천 이름만 출력한다.','모든 제안을 근거 없이 동일 점수로 표시한다.'],'비교 항목과 판단 기준을 고정해 검토 가능성을 높입니다.'),q('평가 데이터 분리','파일럿 평가 문항을 개발 과정에서 모두 학습·조정에 사용했습니다. 올바른 대응은?','별도의 미사용 평가 자료로 다시 검증하고 운영 환경 대표성을 확인한다.',['기존 자료로 100점이면 일반화 성능이 보장된다.','평가 문항 정답을 출력에 넣으면 객관적인 평가다.','실패 문항을 삭제한 뒤 원래 성능으로 보고한다.'],'조정에 사용한 자료만으로는 새로운 상황에서의 성능을 검증하기 어렵습니다.'),q('성과의 인과 해석','AI 도입 후 매출이 증가했다는 사실만으로 적절한 결론은?','증가는 관측되었지만 계절·가격·캠페인 등 다른 요인을 함께 검토해야 한다.',['AI만이 유일한 원인이다.','모든 고객에게 동일 효과가 보장된다.','매출이 늘면 보안 검토는 필요 없다.'],'성과의 변화와 인과 효과는 구분해야 합니다.')];
- base.questions=shuffle([...base.questions,...extra]).slice(0,10);return base;
+ return finalizeExam(base,[...base.questions,...extra],10);
 }
 export const generators={knowledge:generateKnowledgeExpanded,usage:generateUsageExpanded,survey:generateSurvey,compliance:generateCompliance,voc:generateVoc,campaign:generateCampaign,procurement:generateProcurement,education:generateEducation,ax:generateAX};

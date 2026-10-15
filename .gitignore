@@ -1,3 +1,20 @@
+# Dependencies, local tools, and test output
 node_modules/
-.DS_Store
+.venv/
+.vercel/
+coverage/
 test-results/
+playwright-report/
+*.log
+.DS_Store
+
+# Server-only secrets (keep the empty setup template)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Local practice exports, screenshots, and private source documents
+local-data/
+private/
