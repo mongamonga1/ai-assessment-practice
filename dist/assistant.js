@@ -1,4 +1,4 @@
-import {documentText} from './documents.js?v=20261015-llm3';
+import {documentText} from './documents.js?v=20261015-guide3';
 
 export const answerTemplates = {
  auto: ['질문에 맞게 자동', '질문 의도에 맞춰 필요한 항목만 답한다. 단순 후속 질문에는 핵심 답부터 짧게 설명한다.'],
@@ -9,6 +9,12 @@ export const answerTemplates = {
  hint: ['풀이 힌트', '정답 번호를 먼저 공개하지 않고 확인할 문서·조건 → 접근 순서 → 계산 또는 판단의 주의점']
 };
 export function assistantRequest(s,input){
+ const mapQuestion=(q,i)=>({number:i+1,topic:q.topic,prompt:q.prompt,scenario:q.scenario||'',options:q.options,references:(q.evidence||[]).map(e=>({document:e.document,locator:e.locator}))});
+ if(s.interactionMode==='guide'){
+  const selected=s.selectedQuestion??(s.exam.questions.length===1?0:null);
+  const q=selected===null?null:s.exam.questions[selected];
+  return {interactionMode:'guide',input:input.trim(),mode:s.exam.mode,title:s.exam.title,intro:s.exam.intro,questionCount:s.exam.questions.length,currentQuestion:null,selectedQuestion:selected,questions:q?[{...mapQuestion(q,selected),references:[]}]:[],availableDocuments:s.exam.documents.map(d=>d.name),documents:s.attachments.map(i=>s.exam.documents[i]).filter(Boolean).map(d=>({name:d.name,text:documentText(d)})),history:s.messages.filter(m=>m.source==='openai').slice(-10).map(m=>({input:m.input,reply:m.reply,documents:[]})),template:'auto',constraints:''};
+ }
  return {
   input:input.trim(), mode:s.exam.mode, title:s.exam.title, intro:s.exam.intro,
   currentQuestion:s.index, selectedQuestion:s.selectedQuestion,

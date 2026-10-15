@@ -1,3 +1,4 @@
+import {isCorrect,questionType} from './answers.js?v=20261015-guide3';
 export const pick = items => items[Math.floor(Math.random()*items.length)];
 export function shuffle(items) {
   const result=[...items];
@@ -82,4 +83,4 @@ export function generateUsage(){
   ];
   return {mode:'usage',title:'구독 비용 최적화',intro:`2026년 5월 한 달 동안 가상 기업의 FAI 생성형 AI 서비스 라이선스 운영 현황과 정책, 임직원 명부가 주어집니다. 아래 자료를 보고 객관식 질문에 답해주세요.`,questions,documents};
 }
-export function grade(questions,answers){const correct=questions.filter((q,i)=>answers[i]===q.answer).length;return {correct,total:questions.length,score:Math.round(correct/questions.length*100)};}
+export function grade(questions,answers){const correct=questions.filter((q,i)=>isCorrect(q,answers[i])).length;return {correct,total:questions.length,score:Math.round(correct/questions.length*100),objectiveTotal:questions.length};}

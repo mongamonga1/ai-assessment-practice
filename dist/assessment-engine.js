@@ -1,6 +1,7 @@
-import {buildAdvancedBank} from './advanced-bank.js?v=20261015-llm3';
-import {question,shuffle,pick} from './questions.js?v=20261015-llm3';
-import {caseLibrary} from './case-library.js?v=20261015-llm3';
+import {buildDossiers} from './dossiers.js?v=20261015-guide3';
+import {buildAdvancedBank} from './advanced-bank.js?v=20261015-guide3';
+import {question,shuffle,pick} from './questions.js?v=20261015-guide3';
+import {caseLibrary} from './case-library.js?v=20261015-guide3';
 
 const HISTORY_KEY='ai-practice-topic-history-v2';
 let memory={};
@@ -120,5 +121,5 @@ export function finalizeExam(exam,pool,count){
   const b=selectFresh('ax-applied',all.filter(q=>q.dimension==='AX 문제해결'),5);
   exam.questions=[...a.questions,...b.questions];exam.selection={poolSize:a.selection.poolSize+b.selection.poolSize,unseenRemaining:a.selection.unseenRemaining+b.selection.unseenRemaining,persistent:a.selection.persistent&&b.selection.persistent};
  }else Object.assign(exam,selectFresh(exam.mode,all,count));
- return exam;
+ return buildDossiers(exam);
 }

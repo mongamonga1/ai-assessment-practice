@@ -28,11 +28,13 @@ test('AX는 기본 직무역량과 AX 문제해결을 각 5문제 포함',()=>{
   assert.equal(exam.selection.poolSize,22);
  }
 });
-test('심화 원장은 기초 자료와 별도 범위임을 표시하고 해설 근거가 존재',()=>{
+test('통합 자료는 별도 범위·원문별 정책과 유효한 문제 근거를 보존',()=>{
  for(const [mode,generate] of Object.entries(generators)){
   if(mode==='knowledge')continue;
-  const exam=generate(),tables=exam.documents.filter(d=>d.name.startsWith('심화_')&&d.type==='table');
-  assert.ok(tables.length>=9);assert.ok(tables.every(d=>d.note.includes('별도 모집단·기간')));
+  const exam=generate();
+  assert.equal(exam.documents.length,4);
+  assert.ok(exam.documents[0].sections[0].paragraphs.some(p=>p.includes('별도 모집단·기간')));
+  assert.ok(exam.documents[1].sections.every(d=>d.note.includes('별도 모집단·기간')));
   for(const q of exam.questions)for(const ref of q.evidence)assert.ok(exam.documents.some(d=>d.name===ref.document));
  }
 });

@@ -1,5 +1,6 @@
 export const escape=s=>String(s).replace(/[&<>"\']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","\'":"&#39;"}[c]));
 export function documentHtml(d){
+  if(d.type==='dossier')return `<div class="document dossier"><div class="documentBanner">업무 통합 자료 · 원문·이력 대조형</div><h2>${escape(d.name)}</h2><p>${escape(d.description)}</p><p class="dossierContents">${d.sections.map((section,i)=>`${i+1}. ${escape(section.name)}`).join('<br>')}</p>${d.sections.map(section=>documentHtml(section).replace('<div class="document">','<section class="dossierSection">').replace(/<div class="documentBanner">.*?<\/div>/,'').replace(/<h2>/g,'<h3>').replace(/<\/h2>/g,'</h3>').replace(/<\/div>$/,'</section>')).join('')}</div>`;
   if(d.type==='table')return `<div class="document"><div class="documentBanner">업무 분석 자료 · 연습용 가상 데이터</div><h2>${escape(d.name)}</h2><table><tr>${d.headers.map(h=>`<th>${escape(h)}</th>`).join('')}</tr>${d.rows.map(row=>`<tr>${row.map(v=>`<td>${escape(v)}</td>`).join('')}</tr>`).join('')}</table><p>${escape(d.note)}</p></div>`;
   if(d.type==='memo')return `<div class="document"><div class="documentBanner">정책·업무 기록 · 연습용 가상 문서</div><h2>${escape(d.name)}</h2>${d.paragraphs.map((v,i)=>`<h3>${i+1}. 기준 및 참고 사항</h3><p>${escape(v)}</p>`).join('')}</div>`;
   const row=(a,b)=>`<tr><th>${a}</th><td>${b}</td></tr>`;
@@ -12,7 +13,7 @@ export function documentHtml(d){
 
 // 뷰어와 동일한 내용을 내려받아 외부 AI에 전달할 수 있습니다. 정답/해설은 포함하지 않습니다.
 export function documentText(d){
- return documentHtml(d).replace(/<\/(?:tr|p|h2|h3|div)>/g,'\n').replace(/<\/(?:td|th)>/g,' | ').replace(/<[^>]+>/g,'').replace(/&#39;/g,"'").replace(/&quot;/g,'"').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&').trim();
+ return documentHtml(d).replace(/<\/(?:tr|p|h2|h3|div|section)>/g,'\n').replace(/<\/(?:td|th)>/g,' | ').replace(/<[^>]+>/g,'').replace(/&#39;/g,"'").replace(/&quot;/g,'"').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&').trim();
 }
 export function assistantPacket(exam,indices,questionIndex=null,request=''){
  const q=questionIndex===null?null:exam.questions[questionIndex];

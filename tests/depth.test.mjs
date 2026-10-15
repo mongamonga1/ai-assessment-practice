@@ -9,7 +9,7 @@ test('업무상황 유지, 169유형 확보, 상황별 확장 자료와 해설 �
  let types=0;
  for(const [mode,generate] of Object.entries(generators)){
   const first=generate();types+=first.selection.poolSize;
-  if(mode!=='knowledge')assert.ok(first.documents.length>=12);
+  if(mode!=='knowledge'){assert.equal(first.documents.length,4);assert.ok(first.documents.every(d=>d.type==='dossier'));}
   const seen=new Set();
   for(let i=0;i<20;i++){
    const exam=generate();

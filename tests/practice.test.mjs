@@ -4,7 +4,7 @@ const reply=async()=>({reply:'검증 답변'});
 import {generators} from '../dist/scenarios.js';
 test('사전 체험은 2문제, 무제한 시간이며 본 연습과 상태가 분리됨',()=>{const e=generators.ax(),s=createPractice(e,{rehearsal:true});assert.equal(s.exam.questions.length,2);assert.equal(e.questions.length,10);assert.equal(s.deadline,null);assert.equal(timeLeft(s),null);});
 test('타이머는 절대 종료 시각 기준, 새로고침 후에도 남은 시간 유지',()=>{const s=createPractice(generators.survey(),{minutes:1,now:1000});assert.equal(timeLeft(s,1000),60);assert.equal(timeLeft(s,61000),0);assert.equal(timeLeft(restorePractice(JSON.stringify(s)),11000),50);});
-test('종료 후 답안·힌트 수정 차단 및 종료 중복 방지',async()=>{const s=createPractice(generators.survey(),{minutes:0});assert.equal(selectAnswer(s,0,1),true);assert.equal(finishPractice(s),true);assert.equal(finishPractice(s),false);assert.equal(selectAnswer(s,0,2),false);assert.equal((await submitHint(s,'질문',Date.now(),reply)).ok,false);assert.equal(s.answers[0],1);});
+test('종료 후 답안 수정 차단·복습 AI 허용 및 종료 중복 방지',async()=>{const s=createPractice(generators.survey(),{minutes:0});assert.equal(selectAnswer(s,0,1),true);assert.equal(finishPractice(s),true);assert.equal(finishPractice(s),false);assert.equal(selectAnswer(s,0,2),false);assert.equal((await submitHint(s,'질문',Date.now(),reply)).ok,true);assert.equal(s.answers[0],1);});
 test('실제 AI 성공 시에만 차감, 1000자·대기·첨부 해제·10회 제한',async()=>{
  const s=createPractice(generators.survey(),{minutes:0});
  assert.equal((await submitHint(s,'a'.repeat(1001),Date.now(),reply)).ok,false);assert.equal(s.hints,10);

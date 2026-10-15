@@ -1,5 +1,5 @@
-import {finalizeExam} from './assessment-engine.js?v=20261015-llm3';
-import {pick,shuffle,question,generateKnowledge,generateUsage} from './questions.js?v=20261015-llm3';
+import {finalizeExam} from './assessment-engine.js?v=20261015-guide3';
+import {pick,shuffle,question,generateKnowledge,generateUsage} from './questions.js?v=20261015-guide3';
 const money=n=>n.toLocaleString('ko-KR');
 const q=(topic,prompt,correct,wrong,explanation,hint='자료의 조건과 보기의 주장을 하나씩 대조하세요.')=>question(topic,'',prompt,correct,wrong,explanation,hint);
 const table=(name,headers,rows,note='')=>({name,type:'table',headers,rows,note});
