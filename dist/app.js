@@ -1,3 +1,4 @@
+import {createNavigation} from './navigation.js?v=20261016-history1';
 import {modelPrompt} from './model-prompts.js?v=20261015-review1';
 import {chatHtml} from './chat-format.js?v=20261015-review1';
 import {configureExam,typeLabel,answered,isCorrect,processSummary} from './exam-model.js?v=20261015-review1';
@@ -106,6 +107,7 @@ $("#home").onclick = $("#menuButton").onclick = () => {
 $("#exit").onclick = () =>
   view === "exam" && s && !s.graded ? review(true) : menu();
 function menu() {
+  navigation.show({screen:'menu'});
   view = "menu";
   $("#menuButton").textContent = "평가 메뉴";
   $("#examTitle").textContent = "AI 역량평가 연습";
@@ -119,15 +121,22 @@ function menu() {
     .forEach((b) => (b.onclick = () => prepare(b.dataset.start)));
   if ($("#resume")) $("#resume").onclick = render;
 }
-function prepare(requestedMode) {
+function prepare(requestedMode, settings={}) {
+  const validMode=Object.hasOwn(generators,requestedMode);if(!validMode){menu();return;}
+  navigation.show({screen:'prepare',mode:requestedMode});
   view='prepare';const mode=requestedMode;
   $('#examTitle').textContent='연습 시작 안내';
+  $('#menuButton').textContent='평가 메뉴';$('#exit').textContent='이용 가이드';$('#exit').onclick=showGuide;
   const title=mode==='ax'?'AX 직무역량평가 · B2B 컨설팅 & 영업':mode==='knowledge'?'AI 지식평가':practiceMenus.find(x=>x[0]===mode)[1];
   app.innerHTML=`<main class="menu prepare"><h1>${escape(title)}</h1><h2>연습 환경 설정</h2><p>공개된 응시 가이드와 체험 화면을 기준으로 조작을 연습합니다. 모든 문항은 객관식입니다. 실제 전문평가의 자료 해석·검증·개선안 판단도 객관식 상황 문제로 연습합니다.</p><div class="prepareSettings"><label>진행 방식<select id="interactionMode"><option value="guide">가이드 맞춤 · 공통 지문 / 문제 선택 / 파일 재첨부</option><option value="free">자유 연습 · 자동 문제 해석 / 이전 첨부 참고</option></select></label><label>본 연습 제한 시간<select id="practiceMinutes"><option value="1">1분</option><option value="10">10분</option><option value="20" selected>20분</option><option value="30">30분</option><option value="60">60분</option><option value="0">시간 제한 없음</option></select></label><label>AI 질문 총 횟수<select id="hintLimit"><option value="10">10회 · 체험 기준</option><option value="20">20회</option><option value="30">30회</option></select></label></div><p class="menuNote">시간·횟수는 연습용 설정입니다. 실제 시험은 응시 안내에 제시된 설정을 따릅니다. 체험은 시간 제한·채점·결과 리포트가 없습니다.</p><details open><summary>유형별 가이드와 실제 시험과의 차이</summary>${guideBody}</details><div class="prepareActions"><button id="backMenu">평가 메뉴</button><button id="rehearsal">시간 제한 없는 체험</button><button class="primary" id="beginPractice">본 연습 시작</button></div></main>`;
+  for(const id of ['interactionMode','practiceMinutes','hintLimit']){
+    const el=$('#'+id);if([...el.options].some(option=>option.value===settings[id]))el.value=settings[id];
+    el.onchange=()=>navigation.remember();
+  }
   $('#backMenu').onclick=menu;
   const begin=rehearsal=>{
     const options={rehearsal,minutes:Number($('#practiceMinutes').value),interactionMode:$('#interactionMode').value,hintLimit:Number($('#hintLimit').value)};
-    const action=()=>{s=createPractice(configureExam(generators[mode]()),options);assistantError='';save();render();};
+    const action=()=>{s=createPractice(configureExam(generators[mode]()),options);s.navigationId=crypto.randomUUID();assistantError='';save();render();};
     if(s&&!s.graded)confirmAction('새 연습 시작','진행 중인 이전 연습을 새 자료와 문제로 교체합니다. 계속할까요?',action);else action();
   };
   $('#rehearsal').onclick=()=>begin(true);$('#beginPractice').onclick=()=>begin(false);
@@ -150,7 +159,7 @@ function dimensionResult() {
     .join("<br>");
 }
 function render() {
- if(!s){menu();return;}view='exam';
+ if(!s){menu();return;}navigation.show({screen:'exam',sessionId:s.navigationId});view='exam';
  const {exam,index,answers,graded,rehearsal}=s,q=exam.questions[index],count=exam.questions.length,guide=s.interactionMode==='guide',show=graded&&!rehearsal,result=grade(exam.questions,answers),numberScore=i=>isCorrect(exam.questions[i],answers[i])?'100':'0';
  $('#menuButton').textContent=exam.mode==='ax'?'AX 직무역량평가':exam.mode==='knowledge'?'AI 지식평가':'AI 활용평가';$('#examTitle').textContent=exam.title;$('#exit').textContent=graded?'평가 메뉴':'연습 종료';$('#exit').onclick=()=>graded?menu():review(true);
  const resultHtml=!graded?'':rehearsal?'<div class="resultLine" role="status">체험 완료<small>채점·결과 리포트 없이 조작을 체험했습니다. 본 연습은 새 문제로 시작합니다.</small></div>':`<div class="resultLine" role="status">자체 연습 점수: ${result.score} / 100<small>${s.completedReason==='timeout'?'제한 시간 종료 · 저장된 답안이 자동 제출되었습니다.<br>':''}${result.objectiveTotal}문제 중 ${result.correct}문제 정답${exam.mode==='ax'?'<br>'+dimensionResult():''} · ${guide?'가이드 맞춤':'자유 연습'}</small></div>`;
@@ -183,6 +192,7 @@ function render() {
  if($('#openAssistant'))$('#openAssistant').onclick=openAssistant;document.querySelectorAll('[data-open-assistant]').forEach(b=>b.onclick=openAssistant);
  if($('#assistantForm'))bindAssistant();if($('#processReview'))$('#processReview').onclick=processReview;
  if(guide){const paper=$('#paper');let scheduled=false;paper.onscroll=()=>{if(scheduled)return;scheduled=true;requestAnimationFrame(()=>{scheduled=false;if(s?.exam!==exam||view!=='exam'||!paper.isConnected)return;const top=paper.getBoundingClientRect().top+40;const sections=[...paper.querySelectorAll('[data-question-section]')];const active=sections.find(el=>el.getBoundingClientRect().bottom>top);if(!active)return;const i=Number(active.dataset.questionSection);if(s.index===i)return;s.index=i;document.querySelectorAll('[data-question]').forEach(b=>{const yes=Number(b.dataset.question)===i;b.classList.toggle('active',yes);b.setAttribute('aria-current',yes?'step':'false');});$('#currentQuestionLabel').textContent=`${i+1}. ${typeLabel(exam.questions[i])} ( ${show?numberScore(i):'-'} / 100 )`;document.querySelectorAll('[data-step]').forEach(b=>b.disabled=i+Number(b.dataset.step)<0||i+Number(b.dataset.step)>=count);save();});};}
+ $('#paper').addEventListener('scroll',()=>navigation.remember(),{passive:true});
  bindResizing();save();tick();
 }
 function updateAnswerIndicators(){
@@ -405,8 +415,21 @@ document.addEventListener("copy", (e) => {
   if (view === "exam" && (s?.interactionMode==='guide'||!s?.rehearsal) && e.target.closest?.(".examContent") && !e.target.closest?.("textarea,input,[data-model-prompt-text]"))
     e.preventDefault();
 });
-// Restore saved answers without bypassing the assessment selection screen.
-menu();
+// New visits and reloads begin at the menu; back/forward restores screen entries.
+if(s&&typeof s.navigationId!=='string')s.navigationId=crypto.randomUUID();
+const navigation=createNavigation({history:window.history,location:window.location,modes:Object.keys(generators),
+ capture:()=>({scrollY:window.scrollY,paperScroll:$('#paper')?.scrollTop||0,settings:view==='prepare'?Object.fromEntries(['interactionMode','practiceMinutes','hintLimit'].map(id=>[id,$('#'+id).value])):undefined}),
+ onNavigate:route=>{
+  $('#confirmDialog').close();utility.close();dialogAction=null;
+  if(route.screen==='prepare')prepare(route.mode,route.settings||{});
+  else if(route.screen==='exam'&&s?.navigationId===route.sessionId){render();$('#paper').scrollTop=Math.max(0,Number(route.paperScroll)||0);}
+  else {menu();if(route.screen!=='menu')return {screen:'menu'};}
+  window.scrollTo(0,Math.max(0,Number(route.scrollY)||0));
+ }
+});
+window.addEventListener('popstate',event=>navigation.restore(event.state));
+window.addEventListener('scroll',()=>navigation.remember(),{passive:true});
+navigation.start();menu();
 
 function downloadText(name, text) {
   const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
