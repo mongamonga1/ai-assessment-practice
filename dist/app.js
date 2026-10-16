@@ -113,7 +113,7 @@ function menu() {
   $("#exit").onclick = showGuide;
   const row = (mode, title, description, count) =>
     `<section class="menuRow"><div><h2>${title}</h2><p>${description}<br>객관식 ${count}문제 · ${mode === "knowledge" ? "개념 및 상황 판단" : "업무 자료 + AI 어시스트(gpt-4o-mini)"}</p></div><button class="primary" data-start="${mode}">체험 진행하기 ›</button></section>`;
-  app.innerHTML = `<main class="menu"><h1>AI 역량평가 연습</h1>${s ? `<div class="resumeRow"><span>${escape(s.exam.title)}${s.exam.materialProfile ? " · 통합 심층 자료" : s.exam.contentVersion ? " · 이전 자료(새 연습에 통합 자료 적용)" : " · 이전 난이도(새 연습에 상향 적용)"} · ${s.graded ? "종료됨" : "진행 중"}</span><button id="resume">${s.graded ? "결과 확인" : "이어서 풀기"}</button></div>` : ""}${row("ax", "AX 직무역량평가 · B2B 컨설팅 & 영업", "KT 채용공고 참고 · 기본 직무역량 5문제 + AX 문제해결 5문제", 10)}<h2 class="menuGroup">AI 활용평가 · 비개발 직군 업무 상황</h2>${practiceMenus.map(([mode, title, desc, count]) => row(mode, title, desc, count)).join("")}<h2 class="menuGroup">AI 지식평가</h2>${row("knowledge", "AI 기본 개념 및 실무 적용", "생성형 AI · 검증 · 보안 · 프롬프트 · 업무 판단", 10)}<p class="menuNote">새 연습에서는 자료·수치·조건과 질문을 새로 조합합니다. 새로고침하면 진행 중인 연습을 복원합니다.<br>공식 KT·프로그래머스 시험이 아닌 가상 자료 기반 객관식 연습입니다. 어시스트는 로컬 서버와 API 키 설정 후 gpt-4o-mini로 답합니다.</p><details class="sources"><summary>참고 자료</summary><p><a href="https://user-guide.grepp.co/ko" target="_blank" rel="noopener">공식 응시자 가이드</a><a href="https://kt.recruiter.co.kr/career/jobs/125780" target="_blank" rel="noopener">KT 채용공고</a><a href="https://programmers.co.kr/ai-assessment?locale=ko" target="_blank" rel="noopener">프로그래머스 AI 평가</a></p></details></main>`;
+  app.innerHTML = `<main class="menu"><h1>AI 역량평가 연습</h1>${s ? `<div class="resumeRow"><span>${escape(s.exam.title)}${s.exam.mode === "knowledge" ? "" : s.exam.materialProfile ? " · 통합 심층 자료" : s.exam.contentVersion ? " · 이전 자료(새 연습에 통합 자료 적용)" : " · 이전 난이도(새 연습에 상향 적용)"} · ${s.graded ? "종료됨" : "진행 중"}</span><button id="resume">${s.graded ? "결과 확인" : "이어서 풀기"}</button></div>` : ""}${row("ax", "AX 직무역량평가 · B2B 컨설팅 & 영업", "KT 채용공고 참고 · 기본 직무역량 5문제 + AX 문제해결 5문제", 10)}<h2 class="menuGroup">AI 활용평가 · 비개발 직군 업무 상황</h2>${practiceMenus.map(([mode, title, desc, count]) => row(mode, title, desc, count)).join("")}<h2 class="menuGroup">AI 지식평가</h2>${row("knowledge", "AI 기본 개념 및 실무 적용", "생성형 AI · 검증 · 보안 · 프롬프트 · 업무 판단", 10)}<p class="menuNote">새 연습에서는 자료·수치·조건과 질문을 새로 조합합니다. 첫 화면에서 평가를 선택하세요. 저장된 연습은 ‘이어서 풀기’ 또는 ‘결과 확인’으로 열 수 있습니다.<br>공식 KT·프로그래머스 시험이 아닌 가상 자료 기반 객관식 연습입니다. 어시스트는 로컬 서버와 API 키 설정 후 gpt-4o-mini로 답합니다.</p><details class="sources"><summary>참고 자료</summary><p><a href="https://user-guide.grepp.co/ko" target="_blank" rel="noopener">공식 응시자 가이드</a><a href="https://kt.recruiter.co.kr/career/jobs/125780" target="_blank" rel="noopener">KT 채용공고</a><a href="https://programmers.co.kr/ai-assessment?locale=ko" target="_blank" rel="noopener">프로그래머스 AI 평가</a></p></details></main>`;
   document
     .querySelectorAll("[data-start]")
     .forEach((b) => (b.onclick = () => prepare(b.dataset.start)));
@@ -368,11 +368,13 @@ function tick() {
         (el.id === "assistantInput" && !isReview(s) && s.hints === 0);
     });
   if (!s.graded && timeLeft(s) === 0) {
-    $("#confirmDialog").close();
-    utility.close();
     finishPractice(s, "timeout");
     save();
-    render();
+    if (view === "exam") {
+      $("#confirmDialog").close();
+      utility.close();
+      render();
+    } else if (view === "menu") menu();
     return;
   }
   const left = timeLeft(s);
@@ -403,8 +405,8 @@ document.addEventListener("copy", (e) => {
   if (view === "exam" && (s?.interactionMode==='guide'||!s?.rehearsal) && e.target.closest?.(".examContent") && !e.target.closest?.("textarea,input,[data-model-prompt-text]"))
     e.preventDefault();
 });
-if (s) render();
-else menu();
+// Restore saved answers without bypassing the assessment selection screen.
+menu();
 
 function downloadText(name, text) {
   const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
